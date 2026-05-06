@@ -2,7 +2,9 @@
 
 Dataset and code for the paper:
 
-**Beyond Visual Fidelity: Benchmarking Super-Resolution Models for Large-Scale Remote Sensing Imagery via Downstream Task Integration**
+
+**Beyond Visual Fidelity: Benchmarking Super-Resolution Models for Large-Scale Remote Sensing Imagery via Downstream Task Integration** [[arXiv]](https://arxiv.org/abs/2605.00310)
+
 
 GeoSR-Bench is a large-scale benchmark for evaluating remote sensing super-resolution models beyond conventional image fidelity metrics, such as PSNR and SSIM. GeoSR-Bench evaluates whether super-resolved images improve downstream Earth observation tasks.
 
