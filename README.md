@@ -26,4 +26,4 @@ It also includes multiple downstream task datasets for evaluating the practical 
 
 ## Repository Status
 
-The dataset, code, and trained models will be released soon.
+The dataset link, complete code, and trained models will be released soon (in a few days).
