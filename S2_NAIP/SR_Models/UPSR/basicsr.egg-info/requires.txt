@@ -1,0 +1,17 @@
+addict
+einops
+fairscale
+future
+lmdb
+lpips
+numpy==1.26.4
+opencv-python
+Pillow
+pyiqa
+pyyaml
+requests
+scikit-image
+scipy
+timm
+tqdm
+yapf

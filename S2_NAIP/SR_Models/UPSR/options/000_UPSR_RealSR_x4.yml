@@ -1,0 +1,291 @@
+
+# general settings
+name: 000_UPSR_RealSR_x4
+model_target: basicsr.models.upsr_real_model.UPSRRealModel
+scale: 4
+num_gpu: 2
+manual_seed: 0
+# find_unused_parameters: True
+queue_size: 160
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: ImageNet
+    type: RealESRGANDataset
+    dataroot_gt: datasets/ImageNet/train
+    meta_info_file: basicsr/data/meta_info/meta_info_ImageNet_GT.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    
+    mean: 0.5
+    std: 0.5
+
+    blur_kernel_size: 21
+    kernel_list: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+    kernel_prob: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
+    sinc_prob: 0.1
+    blur_sigma: [0.2, 3]
+    betag_range: [0.5, 4]
+    betap_range: [1, 2]
+
+    blur_kernel_size2: 15
+    kernel_list2: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+    kernel_prob2: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
+    sinc_prob2: 0.1
+    blur_sigma2: [0.2, 1.5]
+    betag_range2: [0.5, 4]
+    betap_range2: [1, 2]
+
+    final_sinc_prob: 0.8
+
+    gt_size: 256
+    rescale_gt: False
+    crop_pad_size: 256
+    use_hflip: True
+    use_rot: True
+
+    # data loader
+    num_worker_per_gpu: 6
+    batch_size_per_gpu: 16
+    micro_batchsize: 16
+    dataset_enlarge_ratio: 1
+    prefetch_mode: cuda
+    pin_memory: True
+    persistent_workers: True
+
+  val_1:
+    name: imagenet256
+    type: PairedImageDataset
+    dataroot_gt: datasets/imagenet256/gt
+    dataroot_lq: datasets/imagenet256/lq
+    io_backend:
+      type: disk
+    batch_size: 32
+  
+  val_2:
+    name: RealSRV3
+    type: PairedImageDataset
+    dataroot_gt: datasets/RealSR_test/HR
+    dataroot_lq: datasets/RealSR_test/LR/4
+    io_backend:
+      type: disk
+
+  val_3:
+    name: RealSet65
+    type: SingleImageDataset
+    dataroot_lq: datasets/RealSet65
+    io_backend:
+      type: disk
+
+degradation:
+  # gt_usm: True
+  scale: 4
+  # the first degradation process
+  resize_prob: [0.2, 0.7, 0.1]  # up, down, keep
+  resize_range: [0.15, 1.5]
+  gaussian_noise_prob: 0.5
+  noise_range: [1, 30]
+  poisson_scale_range: [0.05, 3.0]
+  gray_noise_prob: 0.4
+  jpeg_range: [30, 95]
+
+  # the second degradation process
+  second_order_prob: 0.5
+  second_blur_prob: 0.8
+  resize_prob2: [0.3, 0.4, 0.3]  # up, down, keep
+  resize_range2: [0.3, 1.2]
+  gaussian_noise_prob2: 0.5
+  noise_range2: [1, 25]
+  poisson_scale_range2: [0.05, 2.5]
+  gray_noise_prob2: 0.4
+  jpeg_range2: [30, 95]
+
+  gt_size: 256 
+  resize_back: False
+  use_sharp: False
+
+# network structures
+network_g:
+  target: basicsr.archs.swin_unet_arch.UNetModelSwin
+  params:
+    image_size: 64
+    in_channels: 48
+    model_channels: 160
+    out_channels: 3
+    attention_resolutions: [64,32,16,8]
+    dropout: 0
+    channel_mult: [1, 2, 2, 4]
+    num_res_blocks: [2, 2, 2, 2]
+    conv_resample: True
+    dims: 2
+    use_fp16: False
+    num_head_channels: 32
+    use_scale_shift_norm: True
+    resblock_updown: False
+    swin_depth: 2
+    swin_embed_dim: 192
+    window_size: 8
+    mlp_ratio: 4
+    cond_lq: True
+    lq_size: 64
+    num_feat: 128
+
+diffusion:
+  un: 0.1
+  min_noise: 0.4
+  target: models.script_util.create_gaussian_diffusion
+  params:
+    sf: 4
+    schedule_name: exponential
+    schedule_kwargs:
+      power: 0.2
+    etas_end: 0.99
+    steps: 5
+    min_noise_level: 0.2
+    kappa: 2.5
+    weighted_mse: False
+    predict_type: xstart
+    timestep_respacing: ~
+    scale_factor: 1.0
+    normalize_input: True
+    latent_flag: False
+
+network_mse:
+  target: basicsr.archs.atd_real_arch.ATD
+  ckpt: 
+    path: experiments/pretrained_models/atd_real.pth
+    strict_load_mse: true
+    param_key_mse: params_ema
+  params:
+    upscale: 4
+    in_chans: 3
+    img_size: 64
+    embed_dim: 96
+    depths: [6, 6, 6, 6, ]
+    num_heads: [4, 4, 4, 4, ]
+    window_size: 16
+    category_size: 128
+    num_tokens: 64
+    reducted_dim: 8
+    convffn_kernel_size: 7
+    img_range: 1.
+    mlp_ratio: 1
+    upsampler: 'pixelshuffledirect'
+    resi_connection: '1conv'
+    use_checkpoint: false
+
+# autoencoder:
+#   target: ldm.models.autoencoder.VQModelTorch
+#   ckpt_path: weights/autoencoder/autoencoder_vq_f4.pth
+#   use_fp16: True
+#   params:
+#     embed_dim: 3
+#     n_embed: 8192
+#     ddconfig:
+#       double_z: False
+#       z_channels: 3
+#       resolution: 256
+#       in_channels: 3
+#       out_ch: 3
+#       ch: 128
+#       ch_mult:
+#       - 1
+#       - 2
+#       - 4
+#       num_res_blocks: 2
+#       attn_resolutions: []
+#       dropout: 0.0
+#       padding_mode: zeros    
+
+
+# path
+path:
+  pretrain_network_g: ~
+  # pretrain_network_g: experiments/pretrained_models/upsr.pth
+  strict_load_g: true
+  resume_state: ~
+
+# training settings
+train:
+  use_fp16: true
+  ema_decay: 0.999
+  optim_g:
+    type: AdamW
+    lr: !!float 1e-4
+    weight_decay: 0
+    # betas: [0.9, 0.9]
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [200000]
+    gamma: 0.5
+
+  # scheduler:
+  #   type: TrueCosineAnnealingLR
+  #   T_max: 195000
+  #   eta_min: !!float 6e-5
+
+  total_iter: 200000
+  warmup_iter: 5000
+
+  # losses
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+  perceptual_opt:
+    lpips_weight: 0.5
+
+# validation settings
+val:
+  val_freq: 5000
+  suffix: ~
+  save_img: true
+  pbar: true
+  desired_min_size: 64
+  chop_size: 512
+  chop_stride: 448
+  chop_bs: 1
+  noise_repeat: false
+
+  metrics:
+    psnr:
+      fr: true
+
+    ssim:
+      fr: true
+
+    lpips:
+      fr: true
+      better: lower
+    
+    clipiqa:
+      fr: false
+
+    musiq:
+      fr: false
+
+    # maniqa:
+    #   fr: false
+
+    niqe:
+      fr: false
+      better: lower
+
+
+# logging settings
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 1e4
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500
