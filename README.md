@@ -9,7 +9,7 @@ Dataset and code for the paper:
 
 GeoSR-Bench is a large-scale benchmark for evaluating remote sensing super-resolution models beyond conventional image fidelity metrics, such as PSNR and SSIM. GeoSR-Bench evaluates whether super-resolved images improve downstream Earth observation tasks.
 
-The complete GeoSR-Bench dataset is available on Hugging Face: https://huggingface.co/datasets/ai-spatial/GeoSR-Bench
+The complete GeoSR-Bench dataset and trained models are available on Hugging Face: https://huggingface.co/datasets/ai-spatial/GeoSR-Bench
 
 ## Benchmark Tasks
 
@@ -27,6 +27,3 @@ It also includes multiple downstream task datasets for evaluating the practical 
 - Gross primary productivity estimation
 - Canopy height estimation
 
-## Repository Status
-
-The trained models will be released soon.
